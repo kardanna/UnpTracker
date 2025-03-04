@@ -1,0 +1,186 @@
+﻿@model SubmissionModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width"/>
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.css" />
+    <title>Отслеживание УНП</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .form-group {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .form-control {
+            width: 100%;
+        }
+
+        button {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Отслеживание УНП</h2>
+        <form method="post" asp-action="Submit" id="unpForm">
+            <table border="0" id="unpTable">
+                <thead>
+                    <tr>
+                        <th>УНП</th>
+                        <th>Локальная БД</th>
+                        <th>Государственная БД</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="text" asp-for="Unps[0]" class="unp" placeholder="Введите УНП" />
+                        </td>
+                        <td class="status-icon">❔</td>
+                        <td class="status-icon">❔</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <br>
+
+            <div class="form-group">
+                <input type="email" asp-for="Email" placeholder="Введите ваш email" class="form-control" required />
+            </div>
+
+            <br>
+
+            <button type="submit" class="btn btn-primary">Подписаться на изменения</button>
+        </form>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let tableBody = document.querySelector("#unpTable tbody");
+            let rowCount = 1;
+
+            function addNewRowIfNeeded() {
+                let rows = tableBody.querySelectorAll("tr");
+                let lastInput = rows[rows.length - 1].querySelector(".unp");
+
+                if (lastInput.value.trim() !== "") {
+                    let newRow = document.createElement("tr");
+                    newRow.className = "text-center";
+                    newRow.innerHTML = `
+                        <td>
+                            <input type="text" name="Unps[${rowCount}]" class="unp" placeholder="Enter Taxpayer ID" />
+                        </td>
+                        <td class="status-icon">❔</td>
+                        <td class="status-icon">❔</td>
+                    `;
+
+                    tableBody.appendChild(newRow);
+                    attachInputListeners(newRow.querySelector(".unp"));
+                    rowCount++;
+                }
+            }
+
+            function removeExtraEmptyRows() {
+                let rows = tableBody.querySelectorAll("tr");
+                for (let i = rows.length - 1; i > 0; i--) {
+                    let input = rows[i].querySelector(".unp");
+                    let prevInput = rows[i - 1].querySelector(".unp");
+
+                    if (input.value.trim() === "" && prevInput.value.trim() === "") {
+                        tableBody.removeChild(rows[i]);
+                    }
+                }
+            }
+
+            function reindexInputs() {
+                let rows = tableBody.querySelectorAll("tr");
+                for (let i = 0; i < rows.length; i++) {
+                    let input = rows[i].querySelector(".unp");
+                    input.name = `Unps[${i}]`;
+                }
+            }
+
+            function attachInputListeners(input) {
+                input.addEventListener("input", addNewRowIfNeeded);
+                input.addEventListener("blur", function () {
+                    let id = this.value.trim();
+                    if (id === "") return;
+
+                    let row = this.closest("tr");
+                    let localDbIcon = row.children[1];
+                    let stateDbIcon = row.children[2];
+
+                    fetch(`/Home/IsInLocalDb?unp=${id}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            localDbIcon.textContent = data.exists ? '✔️' : '❌';
+                        })
+                        .catch(error => console.error('Local DB fetch error:', error));
+
+                    fetch(`/Home/IsInStateDb?unp=${id}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            stateDbIcon.textContent = data.exists ? '✔️' : '❌';
+                        })
+                        .catch(error => console.error('State DB fetch error:', error));
+                });
+
+                input.addEventListener("input", removeExtraEmptyRows);
+            }
+
+            document.getElementById("unpForm").addEventListener("submit", function () {
+                let rows = tableBody.querySelectorAll("tr");
+                for (let i = rows.length - 1; i >= 0; i--) {
+                    let input = rows[i].querySelector(".unp");
+                    if (input.value.trim() === "") {
+                        if (i > 0) {
+                            tableBody.removeChild(rows[i]);
+                        } else {
+                            alert("Пожалуйста, ввежите хотя бы один УНП");
+                            event.preventDefault();
+                            return;
+                        }
+                    }
+                }
+                reindexInputs();
+            });
+
+            attachInputListeners(document.querySelector(".unp"));
+        });
+    </script>
+</body>
+</html>

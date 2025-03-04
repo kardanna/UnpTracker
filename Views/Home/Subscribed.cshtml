@@ -1,0 +1,52 @@
+@model SubscribedMessageModel
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width"/>
+    <link rel="stylesheet" href="/lib/bootstrap/dist/css/bootstrap.css" />
+    <title>Успешно</title>
+    
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 150%;
+        }
+
+        button {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Вы успешно подписались!</h1>
+        <br>
+        <h4>Вы будете получать уведомления о изменениях @Model?.Unps.Count УНП в базах данных на адрес @Model.Email:</h4>
+        @foreach (var unp in Model.Unps)
+        {
+            <h4>@unp</h4>
+        }
+        <br>
+        <h4>Вы подписаны на уведомления о изменениях @Model.TotalSubscriptions УНП</h4>
+        <br>
+        <a asp-action="Index" class="btn btn-primary">Вернуться</a>
+    </div>
+</body>
+</html>
