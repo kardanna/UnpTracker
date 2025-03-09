@@ -86,8 +86,6 @@ public class EmailService
             unpNotifications[payer.Unp].LocalDbStateChanged(!payer.IsInLocalDb);
             payer.IsInLocalDb = !payer.IsInLocalDb;
         }
-        
-        await dbContext.SaveChangesAsync();
 
         foreach (var payer in await dbContext.Payers.ToListAsync())
         {
